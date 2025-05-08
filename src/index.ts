@@ -8,164 +8,177 @@ interface Customer {
   make: string;
   model: string;
   city: string;
+  payment_amount?: number;  // Optional payment amount
+}
+
+interface PaymentStatistics {
+  totalPayments: number;
+  averagePayment: number;
+  highestPayment: number;
+  lowestPayment: number;
+}
+
+interface PaymentStatus {
+  current: Customer[];
+  late: Customer[];
+  noPayments: Customer[];
 }
 
 class CustomerVehicleData {
-  private data: Customer[];
+  private customers: Customer[];
 
   constructor(data: Customer[]) {
-    this.data = data;
+    this.customers = data;
   }
 
   /**
-   * Format a name by capitalizing the first letter
+   * Format a name by capitalizing the first letter of each word
+   * @param firstName The first name to format
+   * @param lastName The last name to format
+   * @returns Formatted full name with proper capitalization
    */
-  private formatName(name: string): string {
-    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  private static formatName(firstName: string, lastName: string): string {
+    return `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${lastName.charAt(0).toUpperCase() + lastName.slice(1)}`;
   }
 
   /**
    * Format a date as "Month date, Year"
+   * @param dateString ISO date string to format
+   * @returns Formatted date string
    */
-  private formatDate(dateString: string): string {
+  private static formatDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
+      year: 'numeric',
       month: 'long',
       day: 'numeric',
-      year: 'numeric'
     });
   }
 
   /**
    * Format a date as relative time (e.g., "3 months ago")
+   * @param dateString ISO date string to format
+   * @returns Relative time string
    */
-  private formatRelativeTime(dateString: string): string {
+  private static formatRelativeTime(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMonths = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24 * 30)
-    );
+    const diffInMonths = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24 * 30));
     return `${diffInMonths} months ago`;
   }
 
   /**
    * Format a phone number as (xxx) xxx-xxxx
+   * @param phone Phone number string to format
+   * @returns Formatted phone number or original string if invalid
    */
-  private formatPhoneNumber(phone: string): string {
-    const cleaned = phone.replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-      return `(${match[1]}) ${match[2]}-${match[3]}`;
-    }
-    return phone;
+  public formatPhoneNumber(phone: string): string {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length !== 10) return phone;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  /**
+   * Format a currency amount as USD
+   * @param amount Amount to format
+   * @returns Formatted currency string
+   */
+  private static formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   }
 
   /**
    * Format a customer record for display
+   * @param customer Customer object to format
+   * @returns Formatted string with customer information
    */
-  formatCustomer(customer: Customer): string {
-    return `
-${this.formatName(customer.first_name)} ${this.formatName(customer.last_name)}
+  public formatCustomer(customer: Customer): string {
+    const make = customer.make.charAt(0).toUpperCase() + customer.make.slice(1);
+    const model = customer.model.charAt(0).toUpperCase() + customer.model.slice(1);
+    
+    return `${CustomerVehicleData.formatName(customer.first_name, customer.last_name)}
 
-${this.formatName(customer.make)} ${this.formatName(customer.model)}
+${make} ${model}
 
-Purchased: ${this.formatDate(customer.purchased)}
+Purchased: ${CustomerVehicleData.formatDate(customer.purchased)}
 
-Last Payment: ${this.formatRelativeTime(customer.lastpayment)}
+Last Payment: ${CustomerVehicleData.formatRelativeTime(customer.lastpayment)}
 
 Phone: ${this.formatPhoneNumber(customer.phone)}
 
-City: ${this.formatName(customer.city)}
-`;
+City: ${customer.city.charAt(0).toUpperCase() + customer.city.slice(1)}`;
   }
 
   /**
    * Get all customers
    */
-  getAllCustomers(): Customer[] {
-    return this.data;
+  public getAllCustomers(): Customer[] {
+    return this.customers;
   }
 
   /**
    * Find customers by vehicle make
    */
-  findByMake(make: string): Customer[] {
-    return this.data.filter(customer => 
-      customer.make.toLowerCase() === make.toLowerCase()
-    );
+  public findByMake(make: string): Customer[] {
+    return this.customers.filter((customer) => customer.make.toLowerCase() === make.toLowerCase());
   }
 
   /**
    * Find customers by vehicle model
    */
-  findByModel(model: string): Customer[] {
-    return this.data.filter(customer => 
-      customer.model.toLowerCase() === model.toLowerCase()
-    );
+  public findByModel(model: string): Customer[] {
+    return this.customers.filter((customer) => customer.model.toLowerCase() === model.toLowerCase());
   }
 
   /**
    * Get customers by city
    */
-  findByCity(city: string): Customer[] {
-    return this.data.filter(customer => 
-      customer.city.toLowerCase() === city.toLowerCase()
-    );
+  public findByCity(city: string): Customer[] {
+    return this.customers.filter((customer) => customer.city.toLowerCase() === city.toLowerCase());
   }
 
   /**
    * Get customers who purchased after a specific date
    */
-  getCustomersAfterDate(date: string): Customer[] {
-    const compareDate = new Date(date);
-    return this.data.filter(customer => 
-      new Date(customer.purchased) > compareDate
-    );
+  public getCustomersAfterDate(date: string): Customer[] {
+    const targetDate = new Date(date);
+    return this.customers.filter((customer) => new Date(customer.purchased) > targetDate);
   }
 
   /**
    * Get customers who made their last payment before a specific date
    */
-  getCustomersWithLastPaymentBefore(date: string): Customer[] {
-    const compareDate = new Date(date);
-    return this.data.filter(customer => 
-      new Date(customer.lastpayment) < compareDate
-    );
+  public getCustomersWithLastPaymentBefore(date: string): Customer[] {
+    const targetDate = new Date(date);
+    return this.customers.filter((customer) => new Date(customer.lastpayment) < targetDate);
   }
 
   /**
    * Get statistics about the data
    */
-  getStatistics(): {
-    totalCustomers: number;
-    uniqueMakes: number;
-    uniqueModels: number;
-    uniqueCities: number;
-    makeDistribution: Record<string, number>;
-    cityDistribution: Record<string, number>;
-    averageDaysSincePurchase: number;
-    averageDaysSinceLastPayment: number;
-  } {
-    const stats = {
-      totalCustomers: this.data.length,
-      uniqueMakes: [...new Set(this.data.map(c => c.make.toLowerCase()))].length,
-      uniqueModels: [...new Set(this.data.map(c => c.model.toLowerCase()))].length,
-      uniqueCities: [...new Set(this.data.map(c => c.city.toLowerCase()))].length,
-      makeDistribution: this.getMakeDistribution(),
-      cityDistribution: this.getCityDistribution(),
-      averageDaysSincePurchase: this.getAverageDaysSincePurchase(),
-      averageDaysSinceLastPayment: this.getAverageDaysSinceLastPayment()
+  public getStatistics(): { [key: string]: number } {
+    const makes = this.customers.map(c => c.make.toLowerCase());
+    const models = this.customers.map(c => c.model.toLowerCase());
+    const cities = this.customers.map(c => c.city.toLowerCase());
+    
+    return {
+      totalCustomers: this.customers.length,
+      uniqueMakes: [...new Set(makes)].length,
+      uniqueModels: [...new Set(models)].length,
+      uniqueCities: [...new Set(cities)].length,
+      averagePaymentAmount: this.getPaymentStatistics().averagePayment,
     };
-    return stats;
   }
 
   /**
    * Get distribution of vehicle makes
    */
   getMakeDistribution(): Record<string, number> {
-    return this.data.reduce((acc, customer) => {
-      const make = customer.make.toLowerCase();
-      acc[make] = (acc[make] || 0) + 1;
+    return this.customers.reduce((acc, customer) => {
+      acc[customer.make] = (acc[customer.make] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
   }
@@ -174,57 +187,26 @@ City: ${this.formatName(customer.city)}
    * Get distribution of cities
    */
   getCityDistribution(): Record<string, number> {
-    return this.data.reduce((acc, customer) => {
-      const city = customer.city.toLowerCase();
-      acc[city] = (acc[city] || 0) + 1;
+    return this.customers.reduce((acc, customer) => {
+      acc[customer.city] = (acc[customer.city] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
   }
 
   /**
-   * Get average days since purchase
-   */
-  getAverageDaysSincePurchase(): number {
-    const now = new Date();
-    const totalDays = this.data.reduce((sum, customer) => {
-      const purchaseDate = new Date(customer.purchased);
-      return sum + Math.floor((now.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
-    }, 0);
-    return Math.floor(totalDays / this.data.length);
-  }
-
-  /**
-   * Get average days since last payment
-   */
-  getAverageDaysSinceLastPayment(): number {
-    const now = new Date();
-    const totalDays = this.data.reduce((sum, customer) => {
-      const lastPaymentDate = new Date(customer.lastpayment);
-      return sum + Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24));
-    }, 0);
-    return Math.floor(totalDays / this.data.length);
-  }
-
-  /**
    * Sort customers by a specific field
    */
-  sortBy(field: keyof Customer, ascending = true): Customer[] {
-    return [...this.data].sort((a, b) => {
-      let valueA = a[field];
-      let valueB = b[field];
-
-      if (field === 'purchased' || field === 'lastpayment') {
-        valueA = new Date(valueA as string).getTime();
-        valueB = new Date(valueB as string).getTime();
-      }
-
-      if (typeof valueA === 'string') {
-        valueA = valueA.toLowerCase();
-        valueB = (valueB as string).toLowerCase();
-      }
-
-      if (valueA < valueB) return ascending ? -1 : 1;
-      if (valueA > valueB) return ascending ? 1 : -1;
+  sortBy(field: keyof Customer): Customer[] {
+    return [...this.customers].sort((a, b) => {
+      const aValue = a[field];
+      const bValue = b[field];
+      
+      if (aValue === undefined && bValue === undefined) return 0;
+      if (aValue === undefined) return 1;
+      if (bValue === undefined) return -1;
+      
+      if (aValue < bValue) return -1;
+      if (aValue > bValue) return 1;
       return 0;
     });
   }
@@ -232,19 +214,122 @@ City: ${this.formatName(customer.city)}
   /**
    * Filter customers by multiple criteria
    */
-  filterBy(criteria: Partial<Customer>): Customer[] {
-    return this.data.filter(customer => {
-      return Object.entries(criteria).every(([key, value]) => {
-        const field = key as keyof Customer;
-        if (field === 'purchased' || field === 'lastpayment') {
-          const customerDate = new Date(customer[field] as string);
-          const compareDate = new Date(value as string);
-          return customerDate >= compareDate;
-        }
-        return (customer[field] as string).toLowerCase().includes((value as string).toLowerCase());
-      });
+  filterBy(filters: Partial<Customer>): Customer[] {
+    return this.customers.filter((customer) => Object.entries(filters).every(([key, value]) => {
+      const customerValue = customer[key as keyof Customer];
+      if (typeof customerValue === 'string' && typeof value === 'string') {
+        return customerValue.toLowerCase() === value.toLowerCase();
+      }
+      return customerValue === value;
+    }));
+  }
+
+  /**
+   * Get customers with late payments (more than 30 days)
+   * @returns Array of customers with late payments
+   */
+  public getLatePayers(): Customer[] {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return this.customers.filter(customer => {
+      const lastPaymentDate = new Date(customer.lastpayment);
+      const paymentAmount = customer.payment_amount || 0;
+      return lastPaymentDate < thirtyDaysAgo && paymentAmount > 0;
     });
+  }
+
+  /**
+   * Get total payments for a specific time period
+   * @param startDate Start date of period
+   * @param endDate End date of period
+   * @returns Total payments in period
+   */
+  getTotalPaymentsInPeriod(startDate: string, endDate: string): number {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    return this.customers
+      .filter(customer => {
+        const paymentDate = new Date(customer.lastpayment);
+        return paymentDate >= start && paymentDate <= end;
+      })
+      .reduce((total, customer) => total + (customer.payment_amount || 0), 0);
+  }
+
+  /**
+   * Get payment statistics
+   * @returns Object containing payment statistics
+   */
+  getPaymentStatistics(): {
+    totalPayments: number;
+    averagePayment: number;
+    highestPayment: number;
+    lowestPayment: number;
+  } {
+    const payments = this.customers
+      .map(c => c.payment_amount || 0)
+      .filter(amount => amount > 0);
+
+    if (payments.length === 0) {
+      return {
+        totalPayments: 0,
+        averagePayment: 0,
+        highestPayment: 0,
+        lowestPayment: 0,
+      };
+    }
+
+    return {
+      totalPayments: payments.reduce((sum, amount) => sum + amount, 0),
+      averagePayment: payments.reduce((sum, amount) => sum + amount, 0) / payments.length,
+      highestPayment: Math.max(...payments),
+      lowestPayment: Math.min(...payments),
+    };
+  }
+
+  /**
+   * Format a customer record for display with payment information
+   * @param customer Customer object to format
+   * @returns Formatted string with customer information
+   */
+  formatCustomerWithPayments(customer: Customer): string {
+    const baseInfo = this.formatCustomer(customer);
+    const paymentInfo = customer.payment_amount 
+      ? `\nLast Payment Amount: ${CustomerVehicleData.formatCurrency(customer.payment_amount)}`
+      : '';
+    
+    return `${baseInfo}${paymentInfo}`;
+  }
+
+  /**
+   * Get customers grouped by payment status
+   * @returns Object with customers grouped by payment status
+   */
+  public getCustomersByPaymentStatus(): PaymentStatus {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const status: PaymentStatus = {
+      current: [],
+      late: [],
+      noPayments: [],
+    };
+
+    this.customers.forEach(customer => {
+      const lastPaymentDate = new Date(customer.lastpayment);
+      const paymentAmount = customer.payment_amount || 0;
+
+      if (paymentAmount === 0) {
+        status.noPayments.push(customer);
+      } else if (lastPaymentDate < thirtyDaysAgo) {
+        status.late.push(customer);
+      } else {
+        status.current.push(customer);
+      }
+    });
+
+    return status;
   }
 }
 
-export default CustomerVehicleData; 
+export default CustomerVehicleData;

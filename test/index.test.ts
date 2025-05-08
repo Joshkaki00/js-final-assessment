@@ -1,43 +1,43 @@
-const CustomerVehicleData = require('../src/index');
+import CustomerVehicleData from '../src/index';
 
 const testData = [
   {
     id: 1,
-    first_name: "John",
-    last_name: "Doe",
-    purchased: "2019-01-01T00:00:00Z",
-    lastpayment: "2020-01-01T00:00:00Z",
-    phone: "1234567890",
-    make: "toyota",
-    model: "camry",
-    city: "new york"
+    first_name: 'John',
+    last_name: 'Doe',
+    purchased: '2019-01-01T00:00:00Z',
+    lastpayment: '2020-01-01T00:00:00Z',
+    phone: '1234567890',
+    make: 'toyota',
+    model: 'camry',
+    city: 'new york',
   },
   {
     id: 2,
-    first_name: "Jane",
-    last_name: "Smith",
-    purchased: "2018-01-01T00:00:00Z",
-    lastpayment: "2019-12-31T00:00:00Z",
-    phone: "0987654321",
-    make: "honda",
-    model: "civic",
-    city: "los angeles"
+    first_name: 'Jane',
+    last_name: 'Smith',
+    purchased: '2018-01-01T00:00:00Z',
+    lastpayment: '2019-12-31T00:00:00Z',
+    phone: '0987654321',
+    make: 'honda',
+    model: 'civic',
+    city: 'los angeles',
   },
   {
     id: 3,
-    first_name: "Bob",
-    last_name: "Johnson",
-    purchased: "2020-01-01T00:00:00Z",
-    lastpayment: "2021-01-01T00:00:00Z",
-    phone: "5555555555",
-    make: "toyota",
-    model: "corolla",
-    city: "new york"
-  }
+    first_name: 'Bob',
+    last_name: 'Johnson',
+    purchased: '2020-01-01T00:00:00Z',
+    lastpayment: '2021-01-01T00:00:00Z',
+    phone: '5555555555',
+    make: 'toyota',
+    model: 'corolla',
+    city: 'new york',
+  },
 ];
 
 describe('CustomerVehicleData', () => {
-  let customerData;
+  let customerData: CustomerVehicleData;
 
   beforeEach(() => {
     customerData = new CustomerVehicleData(testData);
@@ -77,10 +77,9 @@ describe('CustomerVehicleData', () => {
     });
 
     test('getCustomersWithLastPaymentBefore returns correct customers', () => {
-      const latePayers = customerData.getCustomersWithLastPaymentBefore('2020-01-01');
-      expect(latePayers).toHaveLength(2);
-      expect(latePayers[0].first_name).toBe('John');
-      expect(latePayers[1].first_name).toBe('Jane');
+      const latePayers = customerData.getCustomersWithLastPaymentBefore('2020-01-01T00:00:00Z');
+      expect(latePayers).toHaveLength(1);
+      expect(latePayers[0].first_name).toBe('Jane');
     });
   });
 
@@ -117,11 +116,11 @@ describe('CustomerVehicleData', () => {
     test('filterBy filters correctly', () => {
       const filtered = customerData.filterBy({
         make: 'toyota',
-        city: 'new york'
+        city: 'new york',
       });
       expect(filtered).toHaveLength(2);
       expect(filtered[0].first_name).toBe('John');
       expect(filtered[1].first_name).toBe('Bob');
     });
   });
-}); 
+});
