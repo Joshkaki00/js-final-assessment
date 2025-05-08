@@ -1,6 +1,6 @@
 # Customer Vehicle Data Library
 
-A JavaScript library for processing and analyzing customer and vehicle data.
+A TypeScript library for processing and analyzing customer and vehicle data.
 
 ## Installation
 
@@ -10,9 +10,13 @@ npm install customer-vehicle-data
 
 ## Usage
 
-```javascript
-const CustomerVehicleData = require('customer-vehicle-data');
-const data = require('./data.json');
+```typescript
+import CustomerVehicleData from 'customer-vehicle-data';
+import * as fs from 'fs';
+
+// Read and parse the data
+const rawData = fs.readFileSync('data.json', 'utf-8');
+const data = JSON.parse(rawData);
 
 const customerData = new CustomerVehicleData(data);
 
@@ -26,6 +30,28 @@ const cityCustomers = customerData.findByCity('charlottetown');
 const recentCustomers = customerData.getCustomersAfterDate('2019-01-01');
 const latePayers = customerData.getCustomersWithLastPaymentBefore('2020-12-31');
 
+// Payment Features
+const paymentStats = customerData.getPaymentStatistics();
+console.log(paymentStats);
+// {
+//   totalPayments: 1200,
+//   averagePayment: 400,
+//   highestPayment: 500,
+//   lowestPayment: 300
+// }
+
+const periodTotal = customerData.getTotalPaymentsInPeriod(
+  '2019-12-01T00:00:00Z',
+  '2020-01-31T00:00:00Z'
+);
+
+const paymentStatus = customerData.getCustomersByPaymentStatus();
+// {
+//   current: [...],
+//   late: [...],
+//   noPayments: [...]
+// }
+
 // Statistics
 const stats = customerData.getStatistics();
 console.log(stats);
@@ -34,22 +60,30 @@ console.log(stats);
 //   uniqueMakes: 25,
 //   uniqueModels: 150,
 //   uniqueCities: 500,
-//   makeDistribution: { toyota: 150, honda: 120, ... },
-//   cityDistribution: { 'new york': 50, 'los angeles': 45, ... },
-//   averageDaysSincePurchase: 365,
-//   averageDaysSinceLastPayment: 30
+//   averagePaymentAmount: 400
 // }
 
-// Sorting
-const sortedByPurchaseDate = customerData.sortBy('purchased', true);
-const sortedByLastName = customerData.sortBy('last_name', false);
-
-// Advanced Filtering
+// Sorting and Filtering
+const sortedByPurchaseDate = customerData.sortBy('purchased');
 const filteredCustomers = customerData.filterBy({
   make: 'toyota',
-  city: 'new york',
-  purchased: '2019-01-01'
+  city: 'new york'
 });
+
+// Formatting
+const formattedCustomer = customerData.formatCustomer(data[0]);
+// Output:
+// John Doe
+//
+// Toyota Camry
+//
+// Purchased: January 21, 2019
+//
+// Last Payment: 3 months ago
+//
+// Phone: (415) 544-8375
+//
+// City: New York
 ```
 
 ## API
@@ -76,14 +110,34 @@ Returns an array of customers who purchased their vehicle after the specified da
 #### `getCustomersWithLastPaymentBefore(date)`
 Returns an array of customers who made their last payment before the specified date.
 
+### Payment Features
+
+#### `getLatePayers()`
+Returns an array of customers who haven't made a payment in the last 30 days.
+
+#### `getTotalPaymentsInPeriod(startDate, endDate)`
+Returns the total amount of payments made within the specified date range.
+
+#### `getPaymentStatistics()`
+Returns an object containing payment statistics:
+- Total payments
+- Average payment
+- Highest payment
+- Lowest payment
+
+#### `getCustomersByPaymentStatus()`
+Returns an object grouping customers by payment status:
+- Current payers (paid within last 30 days)
+- Late payers (no payment in last 30 days)
+- No payments (payment amount is 0)
+
 ### Statistics
 
 #### `getStatistics()`
 Returns an object containing various statistics about the data:
 - Total number of customers
 - Number of unique makes, models, and cities
-- Distribution of makes and cities
-- Average days since purchase and last payment
+- Average payment amount
 
 #### `getMakeDistribution()`
 Returns an object showing the count of each vehicle make.
@@ -91,19 +145,33 @@ Returns an object showing the count of each vehicle make.
 #### `getCityDistribution()`
 Returns an object showing the count of customers in each city.
 
-#### `getAverageDaysSincePurchase()`
-Returns the average number of days since customers purchased their vehicles.
-
-#### `getAverageDaysSinceLastPayment()`
-Returns the average number of days since customers made their last payment.
-
 ### Sorting and Filtering
 
-#### `sortBy(field, ascending = true)`
+#### `sortBy(field)`
 Sorts customers by the specified field. Supports all fields including dates.
 
 #### `filterBy(criteria)`
 Filters customers based on multiple criteria. Supports partial matches for strings and date comparisons.
+
+### Formatting
+
+#### `formatCustomer(customer)`
+Returns a formatted string with customer information including:
+- Name (properly capitalized)
+- Vehicle make and model
+- Purchase date
+- Last payment (relative time)
+- Phone number (formatted)
+- City
+
+#### `formatCustomerWithPayments(customer)`
+Returns a formatted string with additional payment information.
+
+#### `formatPhoneNumber(phone)`
+Formats a phone number as (xxx) xxx-xxxx.
+
+#### `formatCurrency(amount)`
+Formats a number as USD currency.
 
 ## License
 
