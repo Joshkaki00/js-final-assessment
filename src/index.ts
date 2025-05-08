@@ -83,7 +83,7 @@ class CustomerVehicleData {
    * @param amount Amount to format
    * @returns Formatted currency string
    */
-  private static formatCurrency(amount: number): string {
+  public static formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
